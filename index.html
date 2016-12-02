@@ -1,0 +1,41 @@
+<html>
+
+<link rel="stylesheet" type="text/css" href="Bootstrap-3.3.6/css/bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="DataTables-1.10.12/css/dataTables.bootstrap.min.css"/>
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <a class="navbar-brand"><i class="glyphicon glyphicon-bullhorn"></i>Weather Observations</a>
+        </div>
+    </nav>
+
+    <div class="container" id="weatherobs">
+        <div class="panel-group" id="weather-accordion" role="tablist" aria-multiselectable="true">
+            <div class="panel panel-default" id="weather">
+                <div class="panel-heading" role="tab" id="weather-heading">
+                    <h4 class="panel-title">
+                        <a role="button" data-toggle="collapse" href="#weather-collapse" aria-expanded="true" aria-controls="collapseOne">
+                            <h3>{{title}}</h3>
+                        </a>
+                    </h4>
+                </div>
+            </div>
+        </div>
+
+        <div id="weather-collapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="weather-heading">
+            <div class="panel-body">
+                
+            </div>
+        </div>
+    </div>    
+</body>
+ 
+<script type="text/javascript" src="node_modules/vue/dist/vue.js"></script>
+<script type="text/javascript" src="node_modules/vue-resource/dist/vue-resource.js"></script>
+<script type="text/javascript" src="app.js"></script>
+<script type="text/javascript" src="DataTables-1.10.12/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="DataTables-1.10.12/js/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="vue.js"></script>
+
+</html>

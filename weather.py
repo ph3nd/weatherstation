@@ -4,35 +4,7 @@ from datetime import datetime as dt
 import os
 import sqlite3
 
-class WeatherObservation:
-    """
-        Represents a weather object with Temperature, Barametric Pressure,
-        Relative Humidity, Lux, Altitude.
-    """
-
-    # Valid weather types
-    OBSERVATION_TYPE = ["temp", "pres", "rhum", "lux", "alt", "time"]
-
-    def __init__(self, _obs):
-        self.observation = dict()
-
-        for key in self.OBSERVATION_TYPE:
-            self.observation[key] = 0
-
-        self.setObservation(_obs)
-
-    def getObservation(self):
-        return self.observation
-
-    def setObservation(self, _obs):
-        # TODO: Add bounds checking for each observation_type
-
-        for key, value in _obs.iteritems():
-            if( key in self.OBSERVATION_TYPE ):
-                self.observation[key] = value
-            else:
-                return False
-
+from observation import WeatherObservation
 
 """
     Database table structure:
@@ -54,6 +26,15 @@ class WeatherHistory:
     """
 
     DBFILE = "Weather.db"
+
+    # SQL statements
+    CREATE_TABLE_OBSERVATIONS = '''CREATE TABLE observations
+                (temperature real, preasure real, relative_humiditiy integer, lux real,
+                 altitude integer, timestamp integer)'''
+    SELECT_ALL = "SELECT * FROM observations ORDER BY timestamp DESC;"
+    SELECT_LATEST = "SELECT * FROM observations ORDER BY timestamp DESC LIMIT 1;"
+    SELECT_TIMESTAMP = "SELECT * FROM observations WHERE timestamp > {} ORDER BY timestamp DESC;"
+    INSERT_OBSERVATION = "INSERT INTO observations VALUES({}, {}, {}, {}, {}, {});"
 
     def __init__(self, _dbfile):
         if( _dbfile ):
@@ -100,27 +81,31 @@ class WeatherHistory:
             conn = sqlite3.connect(_dbfile)
             c = conn.cursor()
 
-            c.execute('''CREATE TABLE observations
-                (temperature real, preasure real, relative_humiditiy integer, lux real, 
-                    altitude integer, timestamp integer)''')
-
+            c.execute(self.CREATE_TABLE_OBSERVATIONS)
             conn.commit()
 
             return conn, c
 
     def LoadObservations(self):
         # Read historical observations from database
-        history = self._ReadDB("SELECT * FROM observations;")
+        history = self._ReadDB(self.SELECT_ALL)
         
         print "WeatherHistory: {} records loaded.".format(len(history))
+        observations = list()
+        for obs in history:
+            observations.append(WeatherObservation(obs).getObservation())
+
+        return observations
 
     def AddObservation(self, _obs):
         wObs = WeatherObservation(_obs).getObservation()
         
-        # Create sql statement
-        sql = "INSERT INTO observations VALUES({}, {}, {}, {}, {}, {});".format(wObs["temp"], wObs["pres"], wObs["rhum"], 
-                wObs["lux"], wObs["alt"], wObs["time"])
-        rtn = self._WriteDB(sql)
+        # Add observation values to the sql statement
+        rtn = self._WriteDB(self.INSERT_OBSERVATION.format(wObs["temp"], wObs["pres"], wObs["rhum"], 
+                wObs["lux"], wObs["alt"], wObs["time"]))
 
         if not rtn:
             raise Exception(rtn)
+
+    def LatestObservation(self):
+        return WeatherObservation(self._ReadDB(self.SELECT_LATEST)[0])
