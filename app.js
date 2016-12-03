@@ -8,24 +8,21 @@ var app = new Vue({
         observations: []
     },
     
-    ready: function() {
-        this.fetchData();
-    },
-
     methods: {
         fetchData: function() {
-            console.log("here");
+            let vm = this;
             this.$http.get("api/observations").then(function( response ) {
-                this.observations = response.data;
-            }).error(function(error) {
-                console.log(error);
+                vm.observations = JSON.parse(response.body);
             });
         },
     },
 
     mounted: function() {
-        $('#obsTable').DataTable( {
-            data: this.observations,
+        let vm = this;
+        this.fetchData();
+
+        vm.datatable = $('#obsTable').DataTable( {
+            data: vm.observations,
             columns: [
                 { data: 'temp' },
                 { data: 'prese' },
@@ -35,5 +32,7 @@ var app = new Vue({
                 { data: 'time' }
             ]
         });
+
+        vm.datatable.search('').draw();
     }
 });
