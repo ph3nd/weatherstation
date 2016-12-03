@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bottle import route, run, template, HTTPError, redirect
+from bottle import route, run, template, HTTPError, redirect, default_app
 from weather import WeatherHistory
 import json
 
@@ -43,4 +43,4 @@ def observations(timestamp):
 
 
 
-run(host='0.0.0.0', port=8080)
+app = application = default_app()

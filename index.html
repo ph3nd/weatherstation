@@ -1,12 +1,16 @@
 <html>
 
-<link rel="stylesheet" type="text/css" href="Bootstrap-3.3.6/css/bootstrap.min.css"/>
-<link rel="stylesheet" type="text/css" href="DataTables-1.10.12/css/dataTables.bootstrap.min.css"/>
+<head>
+    <title>Weather Observations</title>
+</head>
+
+<link rel="stylesheet" type="text/css" href="node_modules/bootstrap/dist/css/bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="node_modules/datatables/media/css/dataTables.bootstrap.min.css"/>
 
 <body>
     <nav class="navbar navbar-default">
         <div class="container-fluid">
-            <a class="navbar-brand"><i class="glyphicon glyphicon-bullhorn"></i>Weather Observations</a>
+            <a class="navbar-brand">Weather Observations</a>
         </div>
     </nav>
 
@@ -25,17 +29,25 @@
 
         <div id="weather-collapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="weather-heading">
             <div class="panel-body">
-                
+                <div id="DataTable">
+                    <table class="hover table table-striped table-bordered dt-responsive nowrap" cellspacing="0" width="100%" id="obsTable">
+                        <thead>
+                            <tr><th v-for="header in dtHeaders">{{header}}</th></tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>                
             </div>
         </div>
     </div>    
 </body>
  
 <script type="text/javascript" src="node_modules/vue/dist/vue.js"></script>
+<script type="text/javascript" src="node_modules/jquery/dist/jquery.min.js"></script>
 <script type="text/javascript" src="node_modules/vue-resource/dist/vue-resource.js"></script>
+<script type="text/javascript" src="node_modules/datatables/media/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="node_modules/datatables/media/js/dataTables.bootstrap.min.js"></script>
 <script type="text/javascript" src="app.js"></script>
-<script type="text/javascript" src="DataTables-1.10.12/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="DataTables-1.10.12/js/dataTables.bootstrap.min.js"></script>
-<script type="text/javascript" src="vue.js"></script>
 
 </html>
