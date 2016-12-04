@@ -8,3 +8,5 @@ Future Plans:
 Add graph representations of the data.
 Add support for Wind Direction and Speed
 Add support for Rainfall
+
+Daemon.py from: http://web.archive.org/web/20131017130434/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
