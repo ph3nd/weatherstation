@@ -1,11 +1,13 @@
 var app = new Vue({
     el: '#weatherobs',
 
-    data:{
-        dtHeaders: ["Temperature", "Pressure", "Relative Humidity", "Lux",
-                        "Altitude", "Timestamp"],
-        title: "Weather Observations",
-        observations: []
+    data: function () {
+        return {
+            dtHeaders: ["Temperature", "Pressure", "Relative Humidity", "Lux",
+                            "Altitude", "Timestamp"],
+            title: "Weather Observations",
+            observations: []
+        }
     },
     
     methods: {
@@ -17,22 +19,28 @@ var app = new Vue({
         },
     },
 
+   watch: { 
+        observations: function() {
+            let vm = this;
+            vm.datatable = $('#obsTable').DataTable( {
+                data: vm.observations,
+                columns: [
+                    { 'data': 'temp' },
+                    { 'data': 'pres' },
+                    { 'data': 'rhum' },
+                    { 'data': 'lux' },
+                    { 'data': 'alt' },
+                    { 'data': 'time' }
+                ]
+            });
+
+            vm.datatable.search('').draw();
+        }
+    },
+
     mounted: function() {
         let vm = this;
+
         this.fetchData();
-
-        vm.datatable = $('#obsTable').DataTable( {
-            data: vm.observations,
-            columns: [
-                { data: 'temp' },
-                { data: 'prese' },
-                { data: 'rhum' },
-                { data: 'lux' },
-                { data: 'alt' },
-                { data: 'time' }
-            ]
-        });
-
-        vm.datatable.search('').draw();
     }
 });
