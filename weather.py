@@ -108,4 +108,4 @@ class WeatherHistory:
             raise Exception(rtn)
 
     def LatestObservation(self):
-        return WeatherObservation(self._ReadDB(self.SELECT_LATEST)[0])
+        return WeatherObservation(self._ReadDB(self.SELECT_LATEST)[0]).getObservation()

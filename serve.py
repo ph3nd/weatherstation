@@ -41,6 +41,11 @@ def observations():
 def observations(timestamp):
     pass
 
+@route("/api/latest")
+def latest():
+    wh = WeatherHistory(None)
+    latest = wh.LatestObservation()
+    return json.dumps(latest)
 
 
 app = application = default_app()
