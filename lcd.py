@@ -7,9 +7,11 @@ import requests
 import time
 from datetime import datetime as dt
 
+# LCD size
 LCD_COLUMNS = 16
 LCD_ROWS = 2 
 
+# LCD GPIO pins
 RSPIN = 19 
 EPIN = 6
 D4PIN = 12
@@ -20,6 +22,7 @@ RPIN = 7
 GPIN = 5
 BPIN = 13
 
+# Keypad GPIO pins
 KEY1PIN = 27
 KEY2PIN = 17
 KEY3PIN = 23
@@ -39,6 +42,7 @@ MSG_PRESSURE = "Pressure:\n{}hPa"
 MSG_LUX = "Lux level:\n {}lx"
 MSG_ALTITUDE = "Altitude: ()m"
 MSG_TIMESTAMP = "Time since epoch\n{}"
+MSG_NUMMESG = 6
 MSG_IP = "{}"
 
 LATEST_OBS_URL = "http://localhost/api/latest"
@@ -87,9 +91,11 @@ class ObsLCD:
         self._keys = list()
         self._msgIP = MSG_IP.format(subprocess.check_output('./ip.sh'))
 
+        self._message = 0
+
     def Loop(self):
         # Fast loop
-        if self._fasttime >= time.time():
+        if self._fasttime <= time.time():
             # Check LCD timout
             if self._lcdon:
                 if lcd._bltimeout > time.time():
@@ -100,7 +106,7 @@ class ObsLCD:
             self._fasttime += FAST_LOOPDT
 
         # Slow loop
-        if self._slowtime >= time.time():
+        if self._slowtime <= time.time():
             if self._state == 0:
                 # Update messages with the lastest weather observation data point
                 self.SetupMessages(self.GetLatest())
@@ -110,12 +116,12 @@ class ObsLCD:
             self._slowtime += SLOW_LOOPDT
             
 '''
-MSG_DEFAULT = "Temperature: {}" + DEGC + "\nHumidity: {}%"
-MSG_TIME = "Today is:\n{}"
-MSG_PRESSURE = "Pressure:\n{}hPa"
-MSG_LUX = "Lux level:\n {}lx"
-MSG_ALTITUDE = "Altitude: ()m"
-MSG_TIMESTAMP = "Time since epoch\n{}"
+0 - MSG_DEFAULT = "Temperature: {}" + DEGC + "\nHumidity: {}%"
+1 - MSG_TIME = "Today is:\n{}"
+2 - MSG_PRESSURE = "Pressure:\n{}hPa"
+3 - MSG_LUX = "Lux level:\n {}lx"
+4 - MSG_ALTITUDE = "Altitude: ()m"
+5 - MSG_TIMESTAMP = "Time since epoch\n{}"
 MSG_IP = "{}\n"
 '''
     def SetupMessages(self, obsPoint):
@@ -125,6 +131,22 @@ MSG_IP = "{}\n"
         self._msgLux = MSG_LUX.format(obsPoint['lux'])
         self._msgAlt = MSG_ALTITUDE.format(obsPoint['alt'])
         self._msgTimestamp = MSG_TIMESTAMP.format(obsPoint['time'])
+
+    def DisplayMessage(self):
+        if self._message == 1:
+            self._lcd.message(self._msgDefault)
+        elif self._message == 2:
+            self._lcd.message(self._msgTime)
+        elif self._message == 3:
+            self._lcd.message(self._msgPres)
+        elif self._message == 4:
+            self._lcd.message(self._msgLux)
+        elif self._message == 5:
+            self._lcd.message(self._msgAlt)
+        elif self._message == 6:
+            self._lcd.message(self._msgTimestamp)
+        else:
+            self._lcd.message(self._msgIP)
 
     def GetLatest(self):
         r = requests.get(LATEST_OBS_URL)
@@ -145,9 +167,15 @@ MSG_IP = "{}\n"
                 # Process each key that has been pressed
                 for key in keys:
                     if key == KEY1PIN:
-                        pass
+                        if self._message = 1:
+                            self._message = MSG_NUMMSG
+                        else:
+                            self._message -= 1
                     elif key == KEY2PIN:
-                        pass
+                        if self._message == MSG_NUMMSG:
+                            self._message = 1
+                        else:
+                            self._message += 1
                     elif key == KEY3PIN:
                         pass
                     elif key == KEY4PIN:
