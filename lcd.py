@@ -5,6 +5,7 @@ import RPi.GPIO as GPIO
 from daemon import Daemon
 import requests
 import time
+from datetime import datetime as dt
 
 LCD_COLUMNS = 16
 LCD_ROWS = 2 
@@ -38,6 +39,7 @@ MSG_PRESSURE = "Pressure:\n{}hPa"
 MSG_LUX = "Lux level:\n {}lx"
 MSG_ALTITUDE = "Altitude: ()m"
 MSG_TIMESTAMP = "Time since epoch\n{}"
+MSG_IP = "{}"
 
 LATEST_OBS_URL = "http://localhost/api/latest"
 
@@ -72,16 +74,18 @@ class ObsLCD:
         
         self._latest = {}
 
-        # loop vars
+        # Loop timing
         self._slowtime = time.time()
         self._fasttime = time.time()
 
+        # Setup keypad callbacks
         self._gpio.add_event_detect(KEY1PIN, GPIO.FALLING, callback=callback, bouncetime=300)
         self._gpio.add_event_detect(KEY2PIN, GPIO.FALLING, callback=callback, bouncetime=300)
         self._gpio.add_event_detect(KEY3PIN, GPIO.FALLING, callback=callback, bouncetime=300)
         self._gpio.add_event_detect(KEY4PIN, GPIO.FALLING, callback=callback, bouncetime=300)
 
         self._keys = list()
+        self._msgIP = MSG_IP.format(subprocess.check_output('./ip.sh'))
 
     def Loop(self):
         # Fast loop
@@ -90,7 +94,8 @@ class ObsLCD:
             if self._lcdon:
                 if lcd._bltimeout > time.time():
                     self._lcdon = False
-                    lcd.set_color(0,0,0)
+                    self.ToggleBacklight()
+
             # Add the Delta time for our fast loop
             self._fasttime += FAST_LOOPDT
 
@@ -104,11 +109,22 @@ class ObsLCD:
             # Add the Delta time for our slow loop
             self._slowtime += SLOW_LOOPDT
             
-
+'''
+MSG_DEFAULT = "Temperature: {}" + DEGC + "\nHumidity: {}%"
+MSG_TIME = "Today is:\n{}"
+MSG_PRESSURE = "Pressure:\n{}hPa"
+MSG_LUX = "Lux level:\n {}lx"
+MSG_ALTITUDE = "Altitude: ()m"
+MSG_TIMESTAMP = "Time since epoch\n{}"
+MSG_IP = "{}\n"
+'''
     def SetupMessages(self, obsPoint):
-        self._lastMessage = self._message
-        self._message = line1 + "\n" + line2
-        
+        self._msgDefault = MSG_DEFAULT.format(obsPoint['temp'], obsPoint['rhum'])
+        self._msgTime = MSG_TIME.format(dt.today().strftime('%d-%m-%y : %H:%M'))
+        self._msgPres = MSG_PRESSURE.format(obsPoint['pres'])
+        self._msgLux = MSG_LUX.format(obsPoint['lux'])
+        self._msgAlt = MSG_ALTITUDE.format(obsPoint['alt'])
+        self._msgTimestamp = MSG_TIMESTAMP.format(obsPoint['time'])
 
     def GetLatest(self):
         r = requests.get(LATEST_OBS_URL)
@@ -119,12 +135,12 @@ class ObsLCD:
             return False, "API returned\nStatus code {}".format(r.status_code)
 
     def ProcessKeys(self, keys):
-        
         if len(keys) > 0:
             # Update the backlight timeout 
             if self._lcdon == False:
                 self._lcdon = True
                 self._bltimeout = time.time() + BACKLIGHT_TIMEOUT
+                self.ToggleBacklight()
             else:
                 # Process each key that has been pressed
                 for key in keys:
