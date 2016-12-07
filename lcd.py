@@ -30,7 +30,7 @@ KEY3PIN = 23
 KEY4PIN = 4
 
 FAST_LOOPDT = 1
-SLOW_LOOPDT = 60
+SLOW_LOOPDT = 300
 BACKLIGHT_TIMEOUT = 10
 
 # Special characters
@@ -54,6 +54,16 @@ LATEST_OBS_URL = "http://localhost/api/latest"
 ERR_NO_POINTS = 0
 ERR_SHOW_IP = 1
 ERR_NO_ERROR = 2
+
+STATE_ERROR = 0
+STATE_DEFAULT = 1
+STATE_TODAY = 2
+STATE_PRESSURE = 3
+STATE_LUX = 4
+STATE_ALTITUDE = 5
+STATE_TIMESTAMP = 6
+STATE_SCROLL = 7
+STATE_OTHER = 99
 
 class ObsLCD:
     """
@@ -86,10 +96,10 @@ class ObsLCD:
         self._lcd = rgblcd(RSPIN, EPIN, D4PIN, D5PIN, D6PIN, D7PIN, LCD_COLUMNS, LCD_ROWS, RPIN, GPIN, BPIN)
         self._bltimeout = time.time() + BACKLIGHT_TIMEOUT
         self._lcdon = True
-        self._laststate = 99
-        self._state = 0
+        self._laststate = STATE_OTHER
+        self._state = STATE_ERROR
         self._error = ERR_SHOW_IP
-        self._errAck = 0
+        self._errAck = False
         
         self._latest = {}
 
@@ -111,7 +121,7 @@ class ObsLCD:
 
         self._scrolltime = time.time()
 
-        self._message = 0
+        self._message = STATE_ERROR
         self.SetupMessages()
 
     def Loop(self):
@@ -141,22 +151,20 @@ class ObsLCD:
 
         # Slow loop
         if self._slowtime <= time.time():
-            if self._state == 1:
-                # Update messages with the lastest weather observation data point
-                self.SetupMessages()
+            # Update messages with the lastest weather observation data point
+            self.SetupMessages()
 
             # Add the Delta time for our slow loop
             self._slowtime += SLOW_LOOPDT
             
     def SetupMessages(self):
         '''
-        0 - MSG_DEFAULT = "Temperature: {}" + DEGC + "\nHumidity: {}%"
-        1 - MSG_TIME = "Today is:\n{}"
-        2 - MSG_PRESSURE = "Pressure:\n{}hPa"
-        3 - MSG_LUX = "Lux level:\n {}lx"
-        4 - MSG_ALTITUDE = "Altitude: ()m"
-        5 - MSG_TIMESTAMP = "Time since epoch\n{}"
-        MSG_IP = "{}\n"
+        1 - MSG_DEFAULT = "Temperature: {}" + DEGC + "\nHumidity: {}%"
+        2 - MSG_TIME = "Today is:\n{}"
+        3 - MSG_PRESSURE = "Pressure:\n{}hPa"
+        4 - MSG_LUX = "Lux level:\n {}lx"
+        5 - MSG_ALTITUDE = "Altitude: ()m"
+        6 - MSG_TIMESTAMP = "Time since epoch\n{}"
         '''
         self.GetLatest()
         if all (key in self._latest for key in ("temp", "rhum", "pres", "lux", "alt", "time")):
@@ -168,64 +176,64 @@ class ObsLCD:
             self._msgTimestamp = MSG_TIMESTAMP.format(self._latest['time'])
         else:
             self._msgError = "Latest Points\nNot Found!"
-            self._state = 0
+            self._state = STATE_ERROR
 
     def DisplayMessage(self):
         self._lcd.clear()
-        if self._message == 0:
+        if self._message == STATE_ERROR:
             self._lcd.message(self._msgError)
-        elif self._message == 1:
+        elif self._message == STATE_DEFAULT:
             self._lcd.message(self._msgDefault)
-        elif self._message == 2:
+        elif self._message == STATE_TIME:
             self._lcd.message(self._msgTime)
-        elif self._message == 3:
+        elif self._message == STATE_PRESSURE:
             self._lcd.message(self._msgPres)
-        elif self._message == 4:
+        elif self._message == STATE_LUX:
             self._lcd.message(self._msgLux)
-        elif self._message == 5:
+        elif self._message == STATE_ALTITUDE:
             self._lcd.message(self._msgAlt)
-        elif self._message == 6:
+        elif self._message == STATE_TIMESTAMP:
             self._lcd.message(self._msgTimestamp)
         else:
             self._lcd.message(self._msgIP)
 
     def ProcessState(self):
-        if self._state == 0:
+        if self._state == STATE_ERROR:
             if self._error == ERR_SHOW_IP:
-                self._message = 99
+                self._message = STATE_OTHER
             else:
-                self._message = 0
+                self._message = STATE_ERROR
 
-            if self._errAck == 1:
-                self._state = 1
-                self._message = 1
+            if self._errAck:
+                self._state = STATE_DEFAULT
+                self._message = STATE_DEFAULT
                 if self._error == ERR_NO_POINTS:
                     self.SetupMessages()
                 elif self._error == ERR_SHOW_IP:
                     self._error = ERR_NO_ERROR
 
-                self.errAck = 0
-        elif self._state == 1:
-            self._message = 1
-        elif self._state == 2:
-            self._message = 2
-        elif self._state == 3:
-            self._message = 3
-        elif self._state == 4:
-            self._message = 4
-        elif self._state == 5:
-            self._message = 5
-        elif self._state == 6:
-            self._message = 6
-        elif self._state == 7:
+                self.errAck = False
+        elif self._state == STATE_DEFAULT:
+            self._message = STATE_DEFAULT
+        elif self._state == STATE_TIME:
+            self._message = STATE_TIME
+        elif self._state == STATE_PRESSURE:
+            self._message = STATE_PRESSURE
+        elif self._state == STATE_LUX:
+            self._message = STATE_LUX
+        elif self._state == STATE_ALTITUDE:
+            self._message = STATE_ALTITUDE
+        elif self._state == STATE_TIMESTAMP:
+            self._message = STATE_TIMESTAMP
+        elif self._state == STATE_SCROLL:
             # If current screen has been displayed for
             # SCROLL_TIME swap to the next one
             if self._scrolltime < time.time():
                 self._message += 1
                 if self._message > NUM_MSG_STATES:
-                    self._message = 1
+                    self._message = STATE_DEFAULT
                 self._scrolltime += SCROLL_TIME
-                self._laststate = 99
+                self._laststate = STATE_OTHER 
                 self._bltimeout = time.time() + BACKLIGHT_TIMEOUT
 
     def GetLatest(self):
@@ -241,27 +249,27 @@ class ObsLCD:
             # Update the backlight timeout 
             if self._lcdon == False:
                 self.ToggleBacklight()
-            elif self._state == 7:
-                self._state = 1
+            elif self._state == STATE_SCROLL:
+                self._state = STATE_DEFAULT
             else:
                 # Process each key that has been pressed
                 for key in self._keys:
                     print key
                     if key == KEY1PIN:
-                        if self._state == 1:
+                        if self._state == STATE_DEFAULT:
                             self._state = NUM_MSG_STATES
                         else:
                             self._state -= 1
                     elif key == KEY2PIN:
                         if self._state == NUM_MSG_STATES:
-                            self._state = 1
+                            self._state = STATE_DEFAULT
                         else:
                             self._state += 1
                     elif key == KEY3PIN:
-                        self._state = 7
+                        self._state = STATE_SCROLL
                         pass
                     elif key == KEY4PIN:
-                        self._errAck = 1
+                        self._errAck = True
 
             # Update backlight timeout if a key was pressed
             self._bltimeout = time.time() + BACKLIGHT_TIMEOUT
