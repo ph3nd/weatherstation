@@ -37,12 +37,12 @@ BACKLIGHT_TIMEOUT = 10
 DEGC = "\337C"
 
 # Message templates
-MSG_DEFAULT = "Temperature: {}" + DEGC + "\nHumidity: {}%"
+MSG_DEFAULT = "Temperature: {temp:.0f}" + DEGC + "\nHumidity: {rhum}%"
 MSG_TIME = "Today is:\n{}"
-MSG_PRESSURE = "Pressure:\n{}hPa"
-MSG_LUX = "Lux level:\n {}lx"
-MSG_ALTITUDE = "Altitude: {}m"
-MSG_TIMESTAMP = "Time since epoch\n{}"
+MSG_PRESSURE = "Pressure:\n{pres:.0f} hPa"
+MSG_LUX = "Lux level:\n {lux:.0f} lx"
+MSG_ALTITUDE = "Altitude: {alt:.0f}m"
+MSG_TIMESTAMP = "Observation at:\n{}"
 MSG_IP = "{}"
 
 NUM_MSG_STATES = 6
@@ -57,7 +57,7 @@ ERR_NO_ERROR = 2
 
 STATE_ERROR = 0
 STATE_DEFAULT = 1
-STATE_TODAY = 2
+STATE_TIME = 2
 STATE_PRESSURE = 3
 STATE_LUX = 4
 STATE_ALTITUDE = 5
@@ -87,7 +87,7 @@ class ObsLCD:
 
             while True:
                 self.Loop()
-        except KeyboardInterupt:
+        except KeyboardInterrupt:
             pass
         finally:
             gpio.cleanup()
@@ -168,12 +168,12 @@ class ObsLCD:
         '''
         self.GetLatest()
         if all (key in self._latest for key in ("temp", "rhum", "pres", "lux", "alt", "time")):
-            self._msgDefault = MSG_DEFAULT.format(self._latest['temp'], self._latest['rhum'])
+            self._msgDefault = MSG_DEFAULT.format(**self._latest)
             self._msgTime = MSG_TIME.format(dt.today().strftime('%d-%m-%y : %H:%M'))
-            self._msgPres = MSG_PRESSURE.format(self._latest['pres'])
-            self._msgLux = MSG_LUX.format(self._latest['lux'])
-            self._msgAlt = MSG_ALTITUDE.format(self._latest['alt'])
-            self._msgTimestamp = MSG_TIMESTAMP.format(self._latest['time'])
+            self._msgPres = MSG_PRESSURE.format(**self._latest)
+            self._msgLux = MSG_LUX.format(**self._latest)
+            self._msgAlt = MSG_ALTITUDE.format(**self._latest)
+            self._msgTimestamp = MSG_TIMESTAMP.format(" ".join(dt.fromtimestamp(self._latest['time']).isoformat().split('T')))
         else:
             self._msgError = "Latest Points\nNot Found!"
             self._state = STATE_ERROR
@@ -266,8 +266,8 @@ class ObsLCD:
                         else:
                             self._state += 1
                     elif key == KEY3PIN:
+                        self._scrolltime = time.time()
                         self._state = STATE_SCROLL
-                        pass
                     elif key == KEY4PIN:
                         self._errAck = True
 
