@@ -47,6 +47,8 @@ MSG_IP = "{}"
 
 NUM_MSG_STATES = 6
 
+SCROLL_TIME = 5
+
 LATEST_OBS_URL = "http://localhost/api/latest"
 
 ERR_NO_POINTS = 0
@@ -69,7 +71,6 @@ class ObsLCD:
     7 - Scroll
     """
 
-
     def Run(self):
         try:
             self.Setup()
@@ -85,7 +86,7 @@ class ObsLCD:
         self._lcd = rgblcd(RSPIN, EPIN, D4PIN, D5PIN, D6PIN, D7PIN, LCD_COLUMNS, LCD_ROWS, RPIN, GPIN, BPIN)
         self._bltimeout = time.time() + BACKLIGHT_TIMEOUT
         self._lcdon = True
-        self._lastState = 99
+        self._laststate = 99
         self._state = 0
         self._error = ERR_SHOW_IP
         self._errAck = 0
@@ -108,6 +109,8 @@ class ObsLCD:
         self._keys = list()
         self._msgIP = MSG_IP.format(subprocess.check_output('./ip.sh'))
 
+        self._scrolltime = time.time()
+
         self._message = 0
         self.SetupMessages()
 
@@ -121,7 +124,7 @@ class ObsLCD:
             self.ProcessState()
 
             # If our state has changed we need to display the new message
-            if self._lastState != self._state:
+            if self._laststate != self._state:
                 self.DisplayMessage()
 
             # Check LCD timout if the lcd is currently on
@@ -131,7 +134,7 @@ class ObsLCD:
             
             # Save our current state as the last state. This lets
             # us avoid rendering if we dont change state next loop
-            self._lastState = self._state
+            self._laststate = self._state
 
             # Add the Delta time for our fast loop
             self._fasttime += FAST_LOOPDT
@@ -215,7 +218,15 @@ class ObsLCD:
         elif self._state == 6:
             self._message = 6
         elif self._state == 7:
-            self._scroll=True
+            # If current screen has been displayed for
+            # SCROLL_TIME swap to the next one
+            if self._scrolltime < time.time():
+                self._message += 1
+                if self._message > NUM_MSG_STATES:
+                    self._message = 1
+                self._scrolltime += SCROLL_TIME
+                self._laststate = 99
+                self._bltimeout = time.time() + BACKLIGHT_TIMEOUT
 
     def GetLatest(self):
         r = requests.get(LATEST_OBS_URL)
@@ -230,6 +241,8 @@ class ObsLCD:
             # Update the backlight timeout 
             if self._lcdon == False:
                 self.ToggleBacklight()
+            elif self._state == 7:
+                self._state = 1
             else:
                 # Process each key that has been pressed
                 for key in self._keys:
