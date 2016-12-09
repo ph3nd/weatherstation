@@ -180,33 +180,18 @@ class ObsLCD:
 
     def DisplayMessage(self):
         self._lcd.clear()
-        if self._message == STATE_ERROR:
-            self._lcd.message(self._msgError)
-        elif self._message == STATE_DEFAULT:
-            self._lcd.message(self._msgDefault)
-        elif self._message == STATE_TIME:
-            self._lcd.message(self._msgTime)
-        elif self._message == STATE_PRESSURE:
-            self._lcd.message(self._msgPres)
-        elif self._message == STATE_LUX:
-            self._lcd.message(self._msgLux)
-        elif self._message == STATE_ALTITUDE:
-            self._lcd.message(self._msgAlt)
-        elif self._message == STATE_TIMESTAMP:
-            self._lcd.message(self._msgTimestamp)
-        else:
-            self._lcd.message(self._msgIP)
+            self._lcd.message(self._message)
 
     def ProcessState(self):
         if self._state == STATE_ERROR:
             if self._error == ERR_SHOW_IP:
-                self._message = STATE_OTHER
+                self._message = self._msgIP
             else:
-                self._message = STATE_ERROR
+                self._message = self._msgError
 
             if self._errAck:
                 self._state = STATE_DEFAULT
-                self._message = STATE_DEFAULT
+                self._message = self._msgDefault
                 if self._error == ERR_NO_POINTS:
                     self.SetupMessages()
                 elif self._error == ERR_SHOW_IP:
@@ -214,27 +199,41 @@ class ObsLCD:
 
                 self.errAck = False
         elif self._state == STATE_DEFAULT:
-            self._message = STATE_DEFAULT
+            self._message = self._msgDefault
         elif self._state == STATE_TIME:
-            self._message = STATE_TIME
+            self._message = self._msgTime
         elif self._state == STATE_PRESSURE:
-            self._message = STATE_PRESSURE
+            self._message = self._msgPres
         elif self._state == STATE_LUX:
-            self._message = STATE_LUX
+            self._message = self._msgLux
         elif self._state == STATE_ALTITUDE:
-            self._message = STATE_ALTITUDE
+            self._message = self._msgAlt
         elif self._state == STATE_TIMESTAMP:
-            self._message = STATE_TIMESTAMP
+            self._message = self._msg
         elif self._state == STATE_SCROLL:
             # If current screen has been displayed for
             # SCROLL_TIME swap to the next one
             if self._scrolltime < time.time():
-                self._message += 1
-                if self._message > NUM_MSG_STATES:
-                    self._message = STATE_DEFAULT
+                self._scroll += 1
+                if self._scroll > NUM_MSG_STATES:
+                    self._scroll = STATE_DEFAULT
                 self._scrolltime += SCROLL_TIME
                 self._laststate = STATE_OTHER 
                 self._bltimeout = time.time() + BACKLIGHT_TIMEOUT
+
+                # Update self._message to the newly scrolled to message
+                if self._scroll == STATE_DEFAULT:
+                    self._message = self._msgDefault
+                elif self._scroll == STATE_TIME:
+                    self._message = self._msgTime
+                elif self._message == STATE_PRESSURE:
+                    self._message = self._msgPres
+                elif self._message == STATE_LUX:
+                    self._message = self._msgLux
+                elif self._message == STATE_ALTITUDE:
+                    self._message = self._msgAlt
+                elif self._message == STATE_TIMESTAMP:
+                    self._message = self._msgTimestamp
 
     def GetLatest(self):
         r = requests.get(LATEST_OBS_URL)
@@ -266,8 +265,11 @@ class ObsLCD:
                         else:
                             self._state += 1
                     elif key == KEY3PIN:
+                        # Set scrolltime to now, set the scroll state and 
+                        # reset the scroll screen
                         self._scrolltime = time.time()
                         self._state = STATE_SCROLL
+                        self._scroll = 0
                     elif key == KEY4PIN:
                         self._errAck = True
 
