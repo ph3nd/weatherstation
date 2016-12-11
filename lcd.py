@@ -180,7 +180,7 @@ class ObsLCD:
 
     def DisplayMessage(self):
         self._lcd.clear()
-            self._lcd.message(self._message)
+        self._lcd.message(self._message)
 
     def ProcessState(self):
         if self._state == STATE_ERROR:
