@@ -125,8 +125,12 @@ class ObsLCD:
         self.SetupMessages()
 
     def Loop(self):
+        ###################
         # Fast loop
         if self._fasttime <= time.time():
+            # Update our time display to the current time
+            self._msgTime = MSG_TIME.format(dt.today().strftime('%d-%m-%y : %H:%M'))
+            
             # Process key input
             self.ProcessKeys()
 
@@ -149,6 +153,7 @@ class ObsLCD:
             # Add the Delta time for our fast loop
             self._fasttime += FAST_LOOPDT
 
+        #################
         # Slow loop
         if self._slowtime <= time.time():
             # Update messages with the lastest weather observation data point
@@ -169,7 +174,6 @@ class ObsLCD:
         self.GetLatest()
         if all (key in self._latest for key in ("temp", "rhum", "pres", "lux", "alt", "time")):
             self._msgDefault = MSG_DEFAULT.format(**self._latest)
-            self._msgTime = MSG_TIME.format(dt.today().strftime('%d-%m-%y : %H:%M'))
             self._msgPres = MSG_PRESSURE.format(**self._latest)
             self._msgLux = MSG_LUX.format(**self._latest)
             self._msgAlt = MSG_ALTITUDE.format(**self._latest)
@@ -180,7 +184,7 @@ class ObsLCD:
 
     def DisplayMessage(self):
         self._lcd.clear()
-            self._lcd.message(self._message)
+        self._lcd.message(self._message)
 
     def ProcessState(self):
         if self._state == STATE_ERROR:
@@ -209,12 +213,13 @@ class ObsLCD:
         elif self._state == STATE_ALTITUDE:
             self._message = self._msgAlt
         elif self._state == STATE_TIMESTAMP:
-            self._message = self._msg
+            self._message = self._msgTimestamp
         elif self._state == STATE_SCROLL:
             # If current screen has been displayed for
             # SCROLL_TIME swap to the next one
             if self._scrolltime < time.time():
                 self._scroll += 1
+                print self._scroll
                 if self._scroll > NUM_MSG_STATES:
                     self._scroll = STATE_DEFAULT
                 self._scrolltime += SCROLL_TIME
@@ -226,14 +231,16 @@ class ObsLCD:
                     self._message = self._msgDefault
                 elif self._scroll == STATE_TIME:
                     self._message = self._msgTime
-                elif self._message == STATE_PRESSURE:
+                elif self._scroll == STATE_PRESSURE:
                     self._message = self._msgPres
-                elif self._message == STATE_LUX:
+                elif self._scroll == STATE_LUX:
                     self._message = self._msgLux
-                elif self._message == STATE_ALTITUDE:
+                elif self._scroll == STATE_ALTITUDE:
                     self._message = self._msgAlt
-                elif self._message == STATE_TIMESTAMP:
+                elif self._scroll == STATE_TIMESTAMP:
                     self._message = self._msgTimestamp
+
+                print self._message
 
     def GetLatest(self):
         r = requests.get(LATEST_OBS_URL)
