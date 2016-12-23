@@ -2,7 +2,6 @@
 
 import json
 
-
 # Defined ranges that observations can fall into, If an
 # observation falls outside of this range it will be set to 0
 MIN_TEMPERATURE = -10
@@ -123,4 +122,4 @@ class WeatherObservation:
                 else:
                     print "unused key: " + key
         else:
-            return "Unknown format"    
+            return False, "Unknown format"    
