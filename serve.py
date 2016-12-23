@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bottle import route, run, template, HTTPError, redirect, default_app
+from bottle import route, run, template, HTTPError, redirect, default_app, request
 from weather import WeatherHistory
 import json
 
@@ -47,5 +47,11 @@ def latest():
     latest = wh.LatestObservation()
     return json.dumps(latest)
 
+@route("/api/addobservation", method='POST')
+def addObservation():
+    wh = WeatherHistory(None)
+
+    wh.AddObservation(request.json)
+    return "Post successfull"
 
 app = application = default_app()

@@ -7,6 +7,7 @@ import requests
 import time
 from datetime import datetime as dt
 import subprocess
+import sys
 
 # LCD size
 LCD_COLUMNS = 16
@@ -40,7 +41,7 @@ DEGC = "\337C"
 MSG_DEFAULT = "Temperature: {temp:.0f}" + DEGC + "\nHumidity: {rhum}%"
 MSG_TIME = "Today is:\n{}"
 MSG_PRESSURE = "Pressure:\n{pres:.0f} hPa"
-MSG_LUX = "Lux level:\n {lux:.0f} lx"
+MSG_LUX = "Lux level:\n {:.0f} lx"
 MSG_ALTITUDE = "Altitude: {alt:.0f}m"
 MSG_TIMESTAMP = "Observation at:\n{}"
 MSG_IP = "{}"
@@ -85,7 +86,13 @@ class ObsLCD:
         try:
             self.Setup()
 
+            self.x = time.time() + 300
+            print self.x
             while True:
+                if self.x < time.time():
+                    print "here1"
+                    
+                    sys.exit()
                 self.Loop()
         except KeyboardInterrupt:
             pass
@@ -175,7 +182,7 @@ class ObsLCD:
         if all (key in self._latest for key in ("temp", "rhum", "pres", "lux", "alt", "time")):
             self._msgDefault = MSG_DEFAULT.format(**self._latest)
             self._msgPres = MSG_PRESSURE.format(**self._latest)
-            self._msgLux = MSG_LUX.format(**self._latest)
+            self._msgLux = MSG_LUX.format(self._latest["lux"]["luxd"])
             self._msgAlt = MSG_ALTITUDE.format(**self._latest)
             self._msgTimestamp = MSG_TIMESTAMP.format(" ".join(dt.fromtimestamp(self._latest['time']).isoformat().split('T')))
         else:
@@ -299,7 +306,10 @@ class ObsLCD:
     def Callback(self, pin):
         self._keys.append(pin)
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
+    lcd = ObsLCD()
+    lcd.Run()
+
 #        daemon = lcd('/tmp/lcd-daemon.pid')
 #        if len(sys.argv) == 2:
 #                if 'start' == sys.argv[1]:

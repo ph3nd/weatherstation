@@ -25,7 +25,7 @@ class WeatherHistory:
         to be used for front end display to users.
     """
 
-    DBFILE = "Weather.db"
+    DBFILE = "/var/www/weather/Weather.db"
 
     # SQL statements
     CREATE_TABLE_OBSERVATIONS = '''CREATE TABLE observations
@@ -38,7 +38,6 @@ class WeatherHistory:
 
     def __init__(self, _dbfile):
         if( _dbfile ):
-            print "here"
             self.dbfile = _dbfile
         else:
             self.dbfile = self.DBFILE
@@ -47,10 +46,12 @@ class WeatherHistory:
         self.conn, self.cur = self._CreateDB(self.dbfile)
 
     def _WriteDB(self, sql):
+        print sql
         if sqlite3.complete_statement(sql):
             try:
                 self.cur.execute(sql)
                 self.conn.commit()
+                print "Writen to db and commited"
             except sqlite3.Error as e:
                return e.args[0]
             
@@ -99,11 +100,12 @@ class WeatherHistory:
 
     def AddObservation(self, _obs):
         wObs = WeatherObservation(_obs).getObservation()
-        
+
         # Add observation values to the sql statement
         rtn = self._WriteDB(self.INSERT_OBSERVATION.format(wObs["temp"], wObs["pres"], wObs["rhum"], 
-                wObs["lux"], wObs["alt"], wObs["time"]))
+                wObs["lux"]["luxd"], wObs["alt"], wObs["time"]))
 
+        print rtn
         if not rtn:
             raise Exception(rtn)
 
